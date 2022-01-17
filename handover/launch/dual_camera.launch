@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<launch>
+
+    <!-- parameter -->
+    <arg name="right_arm"         default="right_arm" />
+    <arg name="left_arm"          default="left_arm" />
+    <param name="/right"          value="$(arg right_arm)" />
+    <param name="/left"           value="$(arg left_arm)" />
+
+    <!-- connect right vx300s -->
+    <include file="$(find realsense2_camera)/launch/rs_aligned_depth.launch">
+            <arg name="serial_no"           default="832112073381"/>
+            <arg name="camera"              default="camera_right"/>
+    </include>
+
+    <!-- connect left vx300s -->
+    <include file="$(find realsense2_camera)/launch/rs_aligned_depth.launch">
+            <arg name="serial_no"           default="828112072428"/>
+            <arg name="camera"              default="camera_left"/>
+    </include>
+
+
+</launch>
