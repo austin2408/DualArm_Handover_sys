@@ -170,28 +170,26 @@ class DualArm_Handover():
 
         self.go_loop = True
 
-        self.near = -0.02
-        c = 0
+        self.near = -0.05
 
         while self.go_loop:
             rospy.loginfo('Loop '+str(test_count+1))
 
-            if test_count == 2:
+            if test_count == 3:
                 self.go_loop = False
 
             for i in range(5):
                 target, GO = self.predict()
 
-                if GO:
+                if GO and target!=None:
                     try:
                         go_pose = rospy.ServiceProxy("/{0}/go_pose".format(self.arm), ee_pose)
                         resp = go_pose(target)
+                        test_count += 1
+                        break
                     except rospy.ServiceException as exc:
                         print("service did not process request: " + str(exc))
 
-                    test_count += 1
-                    c = 0
-                    break
                 else:        
                     if i == 4:
                         test_count += 1
