@@ -200,13 +200,7 @@ class DualArm_Handover():
 
         r = TriggerRequest()
 
-        try:
-            go_initial = rospy.ServiceProxy("/{0}/go_handover".format(self.arm), Trigger)
-            resp = go_initial(r)
-            res.success = True
-        except rospy.ServiceException as exc:
-            res.success = False
-            print("service did not process request: " + str(exc))
+        self.handover_init(self.arm)
 
         self.open_gripper(self.arm)
 
