@@ -165,13 +165,7 @@ class DualArm_Handover():
         rospy.sleep(0.5)
 
         # Reset
-        try:
-            go_initial = rospy.ServiceProxy("/{0}/go_handover".format(self.arm), Trigger)
-            resp = go_initial(r)
-            # res.success = True
-        except rospy.ServiceException as exc:
-            # res.success = False
-            print("service did not process request: " + str(exc))
+        self.handover_init(self.arm)
 
         self.open_gripper(self.arm)
 
@@ -240,6 +234,15 @@ class DualArm_Handover():
 
         try:
             go_pose = rospy.ServiceProxy("/{0}/gripper_close".format(arm), Trigger)
+            resp = go_pose(r)
+        except rospy.ServiceException as exc:
+            print("service did not process request: " + str(exc))
+
+    def handover_init(self, arm: str):
+        r = TriggerRequest()
+
+        try:
+            go_pose = rospy.ServiceProxy("/{0}/go_handover".format(arm), Trigger)
             resp = go_pose(r)
         except rospy.ServiceException as exc:
             print("service did not process request: " + str(exc))
