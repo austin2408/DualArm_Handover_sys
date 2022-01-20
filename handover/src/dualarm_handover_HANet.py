@@ -88,8 +88,6 @@ class DualArm_Handover():
 
 
     def reset_arm(self):
-        r = TriggerRequest()
-
         self.handover_init('right_arm')
         self.open_gripper('right_arm')
 
