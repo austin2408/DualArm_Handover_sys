@@ -21,12 +21,25 @@ class vx300s():
         rospy.Service("/{0}/gripper_open".format(name), Trigger, self.vx300s_open)
         rospy.Service("/{0}/gripper_close".format(name), Trigger, self.vx300s_close)
         rospy.Service("/{0}/check_grasped".format(name), Trigger, self.vx300s_check)
+        rospy.Service("/{0}/go_rise".format(name), Trigger, self.vx300s_rise)
+        rospy.Service("/{0}/go_handover".format(name), Trigger, self.vx300s_handover)
+        rospy.Service("/{0}/go_place".format(name), Trigger, self.vx300s_place)
 
         # vx300s setup
         robot = InterbotixManipulatorXS(robot_model="vx300s", group_name="arm", gripper_name="gripper", robot_name=name, init_node=False)
 
         self.arm = robot.arm
         self.gripper = robot.gripper
+
+        if self.name == 'right_arm':
+            self.rise_pose = [-0.04908738657832146, -0.5660389065742493, 0.5460971593856812, 0.05522330850362778, -0.21629129350185394, -0.012271846644580364]
+            self.handover_pose = [0.7409127354621887, -0.5476311445236206, 1.5309128761291504, -0.34514567255973816, -0.9418642520904541, 0.1288543939590454]
+            self.place_pose = [-0.03834952041506767, 0.39730104804039, 1.260932207107544, 0.010737866163253784, -1.624485731124878, 0.02454369328916073]
+        else:
+            self.rise_pose = [-0.029145635664463043, -0.1871456652879715, 0.11351457983255386, -0.13345633447170258, -0.07516506314277649, 0.12271846830844879]
+            self.handover_pose = [-0.5138835906982422, -0.41264083981513977, 1.1259418725967407, 0.052155349403619766, -0.5276893973350525, 0.0015339808305725455]
+            self.place_pose = [0.6028544902801514, 1.0400390625, -0.7010292410850525, 1.1566215753555298, -0.6350680589675903, -1.055378794670105]
+
 
         self.init()
 
@@ -105,6 +118,30 @@ class vx300s():
             res.success = False
             print("Service call failed: %s"%e)
         
+        return res
+
+    def vx300s_rise(self, req):
+        res = TriggerResponse()
+
+        self.arm.set_joint_positions(self.rise_pose)
+        res.success = True
+        
+        return res
+
+    def vx300s_place(self, req):
+        res = TriggerResponse()
+
+        self.arm.set_joint_positions(self.place_pose)
+        res.success = True
+        
+        return res
+
+    def vx300s_handover(self, req):
+        res = TriggerResponse()
+
+        self.arm.set_joint_positions(self.handover_pose)
+        res.success = True
+
         return res
 
     def vx300s_ee_pose(self, req):
