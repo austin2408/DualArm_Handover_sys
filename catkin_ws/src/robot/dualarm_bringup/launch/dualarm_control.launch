@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<launch>
+
+    <!-- parameter -->
+    <arg name="right_arm"         default="right_arm" />
+    <arg name="left_arm"          default="left_arm" />
+    <param name="/right"          value="$(arg right_arm)" />
+    <param name="/left"           value="$(arg left_arm)" />
+
+    <!-- connect right vx300s -->
+    <include file="$(find interbotix_xsarm_control)/launch/xsarm_control.launch">
+            <arg name="robot_model"     value="vx300s" />
+            <arg name="port"            value="/dev/ttyUSB0" />
+            <arg name="robot_name"      value="$(arg right_arm)" />
+            <arg name="use_rviz"        value="false" />
+    </include>
+
+    <!-- connect left vx300s -->
+    <include file="$(find interbotix_xsarm_control)/launch/xsarm_control.launch">
+            <arg name="robot_model"     value="vx300s" />
+            <arg name="port"            value="/dev/ttyUSB1" />
+            <arg name="robot_name"      value="$(arg left_arm)" />
+            <arg name="use_rviz"        value="false" />
+    </include>
+
+    <node pkg="dualarm_bringup" type="dualarm_control.py" name="dualarm_control_node" />
+
+    <!-- hand eye calibration -->
+    <node pkg="tf" type="static_transform_publisher" name="arm0_tf" 
+    args="0.379466 -0.001393 0.643495 0.711868 -0.011059 -0.702226 -0.000907 right_arm/base_link camera_link 100"/>
+
+    <node pkg="tf" type="static_transform_publisher" name="arm1_tf" 
+    args="0.798555 -0.0082965 0.0282185 -0.0415483 -0.000638724 0.999136 0.0005825 right_arm/base_link left_arm/base_link 100"/>
+
+</launch>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+
+    <!-- end-effector link -->
+    <node pkg="tf" type="static_transform_publisher" name="fake_tcp_publisher" 
+    args="0.18 0.0 0.0 0.0 0.0 0.0 ee_link object_link 100"/>
+
+    <!-- UR5 connection -->
+    <include file="$(find arm_operation)/launch/ur5_real.launch">
+            <arg name="robot_ip" default="192.168.0.160" />
+            <arg name="tool_length" default="0.18"/>
+    </include>
+    
+    <!-- Gripper connection-->
+    <node name="robotiq2FGripper" pkg="robotiq_2f_gripper_control" type="Robotiq2FGripperRtuNode.py"  args="/dev/ttyUSB1" required="true"/>
+
+    <!-- UR5 endeffector control -->
+    <node pkg="ur5_bringup" type="ur5_control.py" name="ur5_control_node" output="screen"/>
+
+    <!-- robotiq gripper control -->
+    <node pkg="ur5_bringup" type="robotiq_gripper_control" name="robotiq_finger_control_node" output="screen">
+        <param name="upper_thres" value="222"/>
+        <param name="lower_thres" value="10"/>
+    </node>
+
+</launch>

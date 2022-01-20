@@ -1,0 +1,9 @@
+[submodule "interbotix_ros_toolboxes"]
+	path = interbotix_ros_toolboxes
+	url = git@github.com:kuolunwang/interbotix_ros_toolboxes.git
+[submodule "interbotix_ros_manipulators"]
+	path = interbotix_ros_manipulators
+	url = git@github.com:kuolunwang/interbotix_ros_manipulators.git
+[submodule "interbotix_ros_core"]
+	path = interbotix_ros_core
+	url = git@github.com:kuolunwang/interbotix_ros_core.git

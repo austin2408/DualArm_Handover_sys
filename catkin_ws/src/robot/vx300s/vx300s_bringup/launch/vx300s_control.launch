@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<launch>
+
+    <!-- parameter -->
+    <arg name="robot_name"         default="vx300s" />
+    <arg name="port"               default="/dev/ttyUSB0" />
+    <arg name="use_rviz"           default="true"/>
+    <param name="/robot_name"      value="$(arg robot_name)" />
+
+    <!-- connect vx300s -->
+    <include file="$(find interbotix_xsarm_control)/launch/xsarm_control.launch">
+            <arg name="robot_model"     value="vx300s" />
+            <arg name="port"            value="$(arg port)" />
+            <arg name="robot_name"      value="$(arg robot_name)" />
+            <arg name="use_rviz"        value="$(arg use_rviz)" />
+    </include>
+
+    <node pkg="vx300s_bringup" type="vx300s_control.py" name="vx300s_control_node" />
+
+</launch>

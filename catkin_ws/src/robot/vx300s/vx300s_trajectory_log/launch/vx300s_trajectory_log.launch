@@ -1,0 +1,18 @@
+<launch>
+
+        <arg name="number"          default="0" />
+        <arg name="fps"             default="5" />           
+        <param name="number"        value="$(arg number)" />
+        <param name="fps"           value="$(arg fps)" />
+
+        <!-- vx300s connect -->
+        <include file="$(find vx300s_bringup)/launch/vx300s_control.launch"/>
+
+        <!-- camera D435 -->
+        <include file="$(find realsense2_camera)/launch/rs_rgbd.launch" />
+
+        <!-- record trajectory -->
+	<node name="collect_data_node" pkg="vx300s_trajectory_log" type="logger.py" output="screen"/>
+        <node name="record_trajectory_node" pkg="vx300s_trajectory_log" type="record_traj.py" output="screen"/>
+
+</launch>
