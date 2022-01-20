@@ -90,21 +90,11 @@ class DualArm_Handover():
     def reset_arm(self):
         r = TriggerRequest()
 
-        try:
-            go_initial = rospy.ServiceProxy("/{0}/go_handover".format('right_arm'), Trigger)
-            resp = go_initial(r)
-            go_pose = rospy.ServiceProxy("/{0}/gripper_open".format('right_arm'), Trigger)
-            resp = go_pose(r)
+        self.handover_init('right_arm')
+        self.open_gripper('right_arm')
 
-            go_initial = rospy.ServiceProxy("/{0}/go_handover".format('left_arm'), Trigger)
-            resp = go_initial(r)
-            go_pose = rospy.ServiceProxy("/{0}/gripper_open".format('left_arm'), Trigger)
-            resp = go_pose(r)
-
-            # res.success = True
-        except rospy.ServiceException as exc:
-            # res.success = False
-            print("service did not process request: " + str(exc))
+        self.handover_init('left_arm')
+        self.open_gripper('left_arm')
 
         rospy.loginfo('Reset arms to initial state')
 
