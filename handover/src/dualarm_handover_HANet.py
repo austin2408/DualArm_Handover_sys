@@ -155,23 +155,19 @@ class DualArm_Handover():
                 res.success = False
                 print("service did not process request: " + str(exc))
 
-                # grasp_flag =False
+            rospy.sleep(1)
 
-        rospy.sleep(1)
+            self.close_gripper(self.arm)
 
-        # Close gripper
-        self.close_gripper(self.arm)
+            rospy.sleep(0.5)
 
-        rospy.sleep(0.5)
+            self.place(self.arm)
 
-        self.place(self.arm)
+            self.open_gripper(self.arm)
 
-        # Reset
-        self.handover_init(self.arm)
+            self.handover_init(self.arm)
 
-        self.open_gripper(self.arm)
-
-        rospy.loginfo('Grasping Complete')
+            rospy.loginfo('Grasping Complete')
 
         return res
 
