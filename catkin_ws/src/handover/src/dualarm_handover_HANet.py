@@ -61,6 +61,8 @@ class DualArm_Handover():
         ts = message_filters.ApproximateTimeSynchronizer([self.color_right, self.depth_right, self.color_left, self.depth_left], 5, 5)
         ts.registerCallback(self.callback_msgs)
 
+        self.force = rospy.Subscriber("/robotiq_ft_wrench", WrenchStamped, self.force_detect)
+
         # Service
         rospy.Service('~grasp', Trigger, self.strategy)
         rospy.Service('~cl_grasp', Trigger, self.Close_Loop_strategy)
@@ -76,6 +78,11 @@ class DualArm_Handover():
 
         rospy.loginfo('============= The Taker is switched to '+self.arm+ '=============')
 
+    def force_detect(self, msg):
+        self.f_x = int(msg.wrench.force.x)
+        self.f_y = int(msg.wrench.force.y)
+        self.f_z = int(msg.wrench.force.z)
+
 
     def switch_srv(self, req):
         res = TriggerResponse()
@@ -85,6 +92,14 @@ class DualArm_Handover():
         res.success = True
 
         return res
+
+    def check_gripper(self):
+        x = self.f_x
+
+        while True:
+            if x != self.f_x:
+                self.close_gripper(self.arm)
+                break
 
 
     def reset_arm(self):
@@ -110,9 +125,7 @@ class DualArm_Handover():
         r = TriggerRequest()
 
         grasp_flag = True
-
-        self.near = 0.0
-
+        
         # Make prediction
         rospy.loginfo('============================================')
 
@@ -126,14 +139,11 @@ class DualArm_Handover():
 
         print(target)
 
-        # self.check_depth()
-
 
         # Open gripper
         self.open_gripper(self.arm)
 
         # Grasp
-        # while grasp_flag:
         if GO:
             try:
                 go_pose = rospy.ServiceProxy("/{0}/go_pose".format(self.arm), ee_pose)
@@ -162,6 +172,7 @@ class DualArm_Handover():
         return res
 
     def Close_Loop_strategy(self, req):
+        self.arm = 'right_arm'
         res = TriggerResponse()
 
         self.open_gripper(self.arm)
@@ -170,13 +181,9 @@ class DualArm_Handover():
 
         self.go_loop = True
 
-        self.near = -0.05
-
         while self.go_loop:
             rospy.loginfo('Loop '+str(test_count+1))
-
-            if test_count == 3:
-                self.go_loop = False
+            print(self.dd)
 
             for i in range(5):
                 target, GO = self.predict()
@@ -184,8 +191,11 @@ class DualArm_Handover():
                 if GO and target!=None:
                     try:
                         go_pose = rospy.ServiceProxy("/{0}/go_pose".format(self.arm), ee_pose)
+                        # print(target)
                         resp = go_pose(target)
                         test_count += 1
+                        if self.dd < 0.04:
+                            self.go_loop = False
                         break
                     except rospy.ServiceException as exc:
                         print("service did not process request: " + str(exc))
@@ -193,16 +203,22 @@ class DualArm_Handover():
                 else:        
                     if i == 4:
                         test_count += 1
-                
+
             rospy.sleep(0.5)
 
-        self.close_gripper(self.arm)
+        rospy.sleep(1)
+        print("Waiting ......")
+        self.check_gripper()
 
-        r = TriggerRequest()
+        rospy.sleep(0.5)
 
-        self.handover_init(self.arm)
+        self.place(self.arm)
 
         self.open_gripper(self.arm)
+
+        self.mid(self.arm)
+
+        self.handover_init(self.arm)
 
         rospy.loginfo('Grasping Complete')
 
@@ -299,13 +315,15 @@ class DualArm_Handover():
 
         if x != 0 and y!=0:
             z = cv_depth_grasp[int(y), int(x)]/1000.0
-            print(A[pred_id], x, y, z)
+            # print(A[pred_id], x, y, z)
 
             aff_pub = cv2.circle(aff_pub, (int(x), int(y)), 10, (0,255,0), -1)
             p = self.bridge.cv2_to_imgmsg(aff_pub, "bgr8")
             self.pred_img_pub.publish(p)
 
             camera_x, camera_y, camera_z = self.getXYZ(x, y, z)
+            # print(camera_z)
+            self.dd = camera_z
 
             if self.go_loop:
                 rot = Rotation.from_euler('xyz', [0, 0, 0], degrees=True)
@@ -373,24 +391,42 @@ class DualArm_Handover():
 
         if tf_pose_matrix[0, 3] >= 0.15 and tf_pose_matrix[0, 3] <= 1.5:
             if self.arm == 'left_arm':
-                tf_pose.target_pose.position.x = tf_pose_matrix[0, 3] + 0.02 + self.near
-                tf_pose.target_pose.position.y = tf_pose_matrix[1, 3] + 0.045
-                tf_pose.target_pose.position.z = tf_pose_matrix[2, 3] + 0.035
+                tf_pose.target_pose.position.x = tf_pose_matrix[0, 3] + 0.07
+                tf_pose.target_pose.position.y = tf_pose_matrix[1, 3] + 0.0
+                tf_pose.target_pose.position.z = tf_pose_matrix[2, 3] -0.07
             else:
-                tf_pose.target_pose.position.x = tf_pose_matrix[0, 3] - 0.01 + self.near
+                tf_pose.target_pose.position.x = tf_pose_matrix[0, 3] - 0.04
                 tf_pose.target_pose.position.y = tf_pose_matrix[1, 3] + 0.03
-                tf_pose.target_pose.position.z = tf_pose_matrix[2, 3] + 0.035
+                tf_pose.target_pose.position.z = tf_pose_matrix[2, 3] - 0.1
 
             tf_pose.target_pose.orientation.x = rot_quat[0]
             tf_pose.target_pose.orientation.y = rot_quat[1]
             tf_pose.target_pose.orientation.z = rot_quat[2]
             tf_pose.target_pose.orientation.w = rot_quat[3]
 
-        if tf_pose.target_pose.position.x > 0.5:
-            vaild = False
+        
+
+        if self.go_loop:
+            try:
+                if self.arm == 'right_arm':
+                    self.listener.waitForTransform('right_arm/base_link', 'right_arm/ee_arm_link', rospy.Time(0), rospy.Duration(1.0))
+                    (trans, rot) = self.listener.lookupTransform('right_arm/base_link', 'right_arm/ee_arm_link', rospy.Time(0))
+                else:
+                    self.listener.waitForTransform('left_arm/base_link', 'left_arm/ee_arm_link', rospy.Time(0), rospy.Duration(1.0))
+                    (trans, rot) = self.listener.lookupTransform('left_arm/base_link', 'left_arm/ee_arm_link', rospy.Time(0))
+
+            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                print("Error TF listening")
+                return
+            tf_pose.target_pose.position.x = (tf_pose.target_pose.position.x + trans[0])*0.5
+            tf_pose.target_pose.position.y = (tf_pose.target_pose.position.y + trans[1])*0.5
+            tf_pose.target_pose.position.z = (tf_pose.target_pose.position.z + trans[2])*0.5
+
+        # if tf_pose.target_pose.position.x > 0.5:
+        #     vaild = False
 
         if tf_pose.target_pose.position.x < 0.0:
-            tf_pose.target_pose.position.x = 0.01
+            tf_pose.target_pose.position.x = 0.1
 
         return tf_pose, vaild
 
@@ -402,8 +438,8 @@ class DualArm_Handover():
 
         # print(Depth)
         find = np.where(Depth==0)
-        # print(find[0].shape)
-        print("Min of depth : ", np.min(Depth), np.max(Depth))
+        print(find[0].shape)
+        # print("Min of depth : ", np.min(Depth), np.max(Depth))
 
 
 
