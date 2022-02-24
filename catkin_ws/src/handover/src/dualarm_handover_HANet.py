@@ -45,7 +45,7 @@ class DualArm_Handover():
         self.f_y = 0
         self.f_z = 0
         self.target_cam_dis = 1000
-        self.fric = 0.5
+        self.dis_decay = 0.5
 
 
         # ddqn agent
@@ -188,7 +188,7 @@ class DualArm_Handover():
         grasp_flag = True
 
         self.go_loop = True
-        self.fric = 0.6
+        self.dis_decay = 0.6
         
         # Make prediction
         rospy.loginfo('============================================')
@@ -234,7 +234,7 @@ class DualArm_Handover():
 
             rospy.loginfo('Grasping Complete')
 
-        self.fric = 1.0
+        self.dis_decay = 1.0
         self.go_loop = False
 
         return res
@@ -523,9 +523,9 @@ class DualArm_Handover():
             except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                 print("Error TF listening")
                 return
-            tf_pose.target_pose.position.x = (tf_pose.target_pose.position.x + trans[0])*self.fric
-            tf_pose.target_pose.position.y = (tf_pose.target_pose.position.y + trans[1])*self.fric
-            tf_pose.target_pose.position.z = (tf_pose.target_pose.position.z + trans[2])*self.fric
+            tf_pose.target_pose.position.x = (tf_pose.target_pose.position.x + trans[0])*self.dis_decay
+            tf_pose.target_pose.position.y = (tf_pose.target_pose.position.y + trans[1])*self.dis_decay
+            tf_pose.target_pose.position.z = (tf_pose.target_pose.position.z + trans[2])*self.dis_decay
 
 
         if tf_pose.target_pose.position.x < 0.0:
