@@ -554,9 +554,9 @@ class DualArm_Handover():
             except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
                 print("Error TF listening")
                 return
-            tf_pose.target_pose.position.x = (tf_pose.target_pose.position.x + trans[0])*0.5
-            tf_pose.target_pose.position.y = (tf_pose.target_pose.position.y + trans[1])*0.5
-            tf_pose.target_pose.position.z = (tf_pose.target_pose.position.z + trans[2])*0.5
+            tf_pose.target_pose.position.x = (tf_pose.target_pose.position.x + trans[0])*self.fric
+            tf_pose.target_pose.position.y = (tf_pose.target_pose.position.y + trans[1])*self.fric
+            tf_pose.target_pose.position.z = (tf_pose.target_pose.position.z + trans[2])*self.fric
 
         # if tf_pose.target_pose.position.x > 0.5:
         #     vaild = False
