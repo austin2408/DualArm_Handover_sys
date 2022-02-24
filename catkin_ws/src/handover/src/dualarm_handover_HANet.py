@@ -298,6 +298,63 @@ class DualArm_Handover():
 
         return res
 
+    def Close_Loop_strategy_in(self, req):
+        self.arm = 'right_arm'
+        res = TriggerResponse()
+
+        # self.fric = 0.7
+
+        self.open_gripper(self.arm)
+
+        test_count = 0
+
+        self.go_loop = True
+
+        while self.go_loop:
+            rospy.loginfo('Loop '+str(test_count+1))
+            print(self.dd)
+
+            # for i in range(5):
+            target, GO = self.predict()
+
+            if GO and target!=None:
+                try:
+                    go_pose = rospy.ServiceProxy("/{0}/go_pose".format(self.arm), ee_pose)
+                    # print(target)
+                    resp = go_pose(target)
+                    test_count += 1
+                    if self.dd < 0.08:
+                        self.go_loop = False
+                    # break
+                except rospy.ServiceException as exc:
+                    print("service did not process request: " + str(exc))
+
+            else:        
+                # if i == 4:
+                test_count += 1
+
+            rospy.sleep(1)
+
+        rospy.sleep(1.5)
+        print("Waiting ......")
+        self.check_gripper()
+
+        rospy.sleep(0.5)
+
+        self.place(self.arm)
+
+        self.open_gripper(self.arm)
+
+        self.mid(self.arm)
+
+        self.handover_init(self.arm)
+
+        # self.fric = 1.0
+
+        rospy.loginfo('Grasping Complete')
+
+        return res
+
 
     def close_gripper(self, arm: str):
         r = TriggerRequest()
