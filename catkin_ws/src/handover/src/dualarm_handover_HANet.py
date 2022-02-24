@@ -66,6 +66,7 @@ class DualArm_Handover():
         ts = message_filters.ApproximateTimeSynchronizer([self.color_right, self.depth_right, self.color_left, self.depth_left], 5, 5)
         ts.registerCallback(self.callback_msgs)
 
+        # Subscrib Force Sensor
         self.force = rospy.Subscriber("/robotiq_ft_wrench", WrenchStamped, self.force_detect)
 
         # Service
@@ -74,9 +75,12 @@ class DualArm_Handover():
         rospy.Service('~grasp_in', Trigger, self.strategy_in)
         rospy.Service('~cl_grasp_in', Trigger, self.Close_Loop_strategy_in)
         rospy.Service('~change_hand', Trigger, self.switch_srv)
+
+        # Initial
         self.reset_arm()
         rospy.loginfo('System startup is complete ! The Taker is '+self.arm)
 
+    # Switch opterated arm
     def switch(self):
         if self.arm == 'right_arm':
             self.arm = 'left_arm'
@@ -126,12 +130,11 @@ class DualArm_Handover():
         self.color_left = colorL
         self.depth_left = depthL
 
+    # Deal with Static / Passive scenario
     def strategy_pa(self, req):
         res = TriggerResponse()
 
         r = TriggerRequest()
-
-        grasp_flag = True
         
         # Make prediction
         rospy.loginfo('============================================')
@@ -145,7 +148,6 @@ class DualArm_Handover():
             return res
 
         print(target)
-
 
         # Open gripper
         self.open_gripper(self.arm)
@@ -178,14 +180,13 @@ class DualArm_Handover():
 
         return res
 
+    # Deal with Static / Active scenario
     def strategy_in(self, req):
         self.arm = 'right_arm'
 
         res = TriggerResponse()
 
         r = TriggerRequest()
-
-        grasp_flag = True
 
         self.go_loop = True
         self.dis_decay = 0.6
@@ -202,7 +203,6 @@ class DualArm_Handover():
             return res
 
         print(target)
-
 
         # Open gripper
         self.open_gripper(self.arm)
@@ -239,6 +239,7 @@ class DualArm_Handover():
 
         return res
 
+    # Deal with Dynamic / Passive scenario
     def Close_Loop_strategy_pa(self, req):
         res = TriggerResponse()
 
@@ -285,6 +286,7 @@ class DualArm_Handover():
 
         return res
 
+    # Deal with Dynamic / Active scenario
     def Close_Loop_strategy_in(self, req):
         self.arm = 'right_arm'
         res = TriggerResponse()
@@ -354,6 +356,7 @@ class DualArm_Handover():
         except rospy.ServiceException as exc:
             print("service did not process request: " + str(exc))
 
+    # Move to relay position
     def mid(self, arm: str):
         r = TriggerRequest()
 
@@ -384,7 +387,6 @@ class DualArm_Handover():
 
 
     def predict(self):
-        # Convert msg type
         A = [90,45,0,-45]
 
         if self.arm == 'right_arm':
@@ -394,6 +396,7 @@ class DualArm_Handover():
             color = self.color_left
             depth = self.depth_left
         
+        # Convert msg type
         try:
             cv_image = self.bridge.compressed_imgmsg_to_cv2(color, "bgr8")
             cv_depth = self.bridge.imgmsg_to_cv2(depth, "16UC1")
