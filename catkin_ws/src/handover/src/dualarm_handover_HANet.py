@@ -48,7 +48,7 @@ class DualArm_Handover():
         self.dis_decay = 0.5
 
 
-        # ddqn agent
+        # Load model
         self.net = HANet(4)
         self.net.load_state_dict(torch.load(self.path+'/src/ddqn/weight/HANet.pth'))
         self.net = self.net.cuda()
