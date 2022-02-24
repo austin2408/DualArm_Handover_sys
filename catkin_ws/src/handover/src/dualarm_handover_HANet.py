@@ -6,7 +6,7 @@ import rospkg
 import message_filters
 from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import CameraInfo, CompressedImage, Image
-from geometry_msgs.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped, WrenchStamped
 from std_srvs.srv import Trigger, TriggerResponse, TriggerRequest
 import rospy
 import cv2
