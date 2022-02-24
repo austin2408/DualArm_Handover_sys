@@ -456,10 +456,12 @@ class DualArm_Handover():
             # print(camera_z)
             self.dd = camera_z
 
-            if self.go_loop:
-                rot = Rotation.from_euler('xyz', [0, 0, 0], degrees=True)
-            else:
-                rot = Rotation.from_euler('xyz', [A[pred_id], 0, 0], degrees=True) 
+            # if self.go_loop:
+            #     rot = Rotation.from_euler('xyz', [0, 0, 0], degrees=True)
+            # else:
+            #     rot = Rotation.from_euler('xyz', [A[pred_id], 0, 0], degrees=True)
+
+            rot = Rotation.from_euler('xyz', [A[pred_id], 0, 0], degrees=True) 
 
             rot_quat = rot.as_quat()
 
@@ -477,10 +479,13 @@ class DualArm_Handover():
             target_pose, go_ok = self.camera2world(Target_pose)
 
             if z == 0.0:
+                # self.dd = 1.0
                 go_ok = False
+            
 
             return target_pose, go_ok
         else:
+            # self.dd = 1.0
             return None, False
 
 
