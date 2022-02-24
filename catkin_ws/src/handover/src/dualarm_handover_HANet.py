@@ -240,7 +240,6 @@ class DualArm_Handover():
         return res
 
     def Close_Loop_strategy_pa(self, req):
-        # self.arm = 'right_arm'
         res = TriggerResponse()
 
         self.open_gripper(self.arm)
@@ -249,18 +248,10 @@ class DualArm_Handover():
 
         self.go_loop = True
 
-        # self.fric = 0.45
-
-
         while self.go_loop:
             rospy.loginfo('Loop '+str(test_count+1))
             print(self.dd)
 
-            # for i in range(5):
-            # if test_count == 1:
-            #     self.fric = 1.0
-            # else:
-            #     self.fric = 0.45
             target, GO = self.predict()
 
             if GO and target!=None:
@@ -270,15 +261,11 @@ class DualArm_Handover():
                     resp = go_pose(target)
                     test_count += 1
                     if self.dd < 0.04:
-                    # if self.fric == 1.0:
                         self.go_loop = False
                     # break
                 except rospy.ServiceException as exc:
                     print("service did not process request: " + str(exc))
 
-            # else:        
-                # if i == 4:
-                # test_count += 1
 
             rospy.sleep(1)
 
@@ -302,7 +289,6 @@ class DualArm_Handover():
         self.arm = 'right_arm'
         res = TriggerResponse()
 
-        # self.fric = 0.7
 
         self.open_gripper(self.arm)
 
@@ -314,23 +300,19 @@ class DualArm_Handover():
             rospy.loginfo('Loop '+str(test_count+1))
             print(self.dd)
 
-            # for i in range(5):
             target, GO = self.predict()
 
             if GO and target!=None:
                 try:
                     go_pose = rospy.ServiceProxy("/{0}/go_pose".format(self.arm), ee_pose)
-                    # print(target)
                     resp = go_pose(target)
                     test_count += 1
                     if self.dd < 0.08:
                         self.go_loop = False
-                    # break
                 except rospy.ServiceException as exc:
                     print("service did not process request: " + str(exc))
 
             else:        
-                # if i == 4:
                 test_count += 1
 
             rospy.sleep(1)
@@ -348,8 +330,6 @@ class DualArm_Handover():
         self.mid(self.arm)
 
         self.handover_init(self.arm)
-
-        # self.fric = 1.0
 
         rospy.loginfo('Grasping Complete')
 
@@ -408,11 +388,9 @@ class DualArm_Handover():
         A = [90,45,0,-45]
 
         if self.arm == 'right_arm':
-            # rospy.loginfo('Taker : right_arm')
             color = self.color_right
             depth = self.depth_right
         else:
-            # rospy.loginfo('Taker : left_arm')
             color = self.color_left
             depth = self.depth_left
         
@@ -446,20 +424,13 @@ class DualArm_Handover():
 
         if x != 0 and y!=0:
             z = cv_depth_grasp[int(y), int(x)]/1000.0
-            # print(A[pred_id], x, y, z)
 
             aff_pub = cv2.circle(aff_pub, (int(x), int(y)), 10, (0,255,0), -1)
             p = self.bridge.cv2_to_imgmsg(aff_pub, "bgr8")
             self.pred_img_pub.publish(p)
 
             camera_x, camera_y, camera_z = self.getXYZ(x, y, z)
-            # print(camera_z)
             self.dd = camera_z
-
-            # if self.go_loop:
-            #     rot = Rotation.from_euler('xyz', [0, 0, 0], degrees=True)
-            # else:
-            #     rot = Rotation.from_euler('xyz', [A[pred_id], 0, 0], degrees=True)
 
             rot = Rotation.from_euler('xyz', [A[pred_id], 0, 0], degrees=True) 
 
@@ -479,13 +450,11 @@ class DualArm_Handover():
             target_pose, go_ok = self.camera2world(Target_pose)
 
             if z == 0.0:
-                # self.dd = 1.0
                 go_ok = False
             
 
             return target_pose, go_ok
         else:
-            # self.dd = 1.0
             return None, False
 
 
@@ -558,8 +527,6 @@ class DualArm_Handover():
             tf_pose.target_pose.position.y = (tf_pose.target_pose.position.y + trans[1])*self.fric
             tf_pose.target_pose.position.z = (tf_pose.target_pose.position.z + trans[2])*self.fric
 
-        # if tf_pose.target_pose.position.x > 0.5:
-        #     vaild = False
 
         if tf_pose.target_pose.position.x < 0.0:
             tf_pose.target_pose.position.x = 0.1
