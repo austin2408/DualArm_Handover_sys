@@ -44,7 +44,7 @@ class DualArm_Handover():
         self.f_x = 0
         self.f_y = 0
         self.f_z = 0
-        self.dd = 1000
+        self.target_cam_dis = 1000
         self.fric = 0.5
 
 
@@ -250,7 +250,7 @@ class DualArm_Handover():
 
         while self.go_loop:
             rospy.loginfo('Loop '+str(test_count+1))
-            print(self.dd)
+            print(self.target_cam_dis)
 
             target, GO = self.predict()
 
@@ -260,7 +260,7 @@ class DualArm_Handover():
                     print(target)
                     resp = go_pose(target)
                     test_count += 1
-                    if self.dd < 0.04:
+                    if self.target_cam_dis < 0.04:
                         self.go_loop = False
                     # break
                 except rospy.ServiceException as exc:
@@ -298,7 +298,7 @@ class DualArm_Handover():
 
         while self.go_loop:
             rospy.loginfo('Loop '+str(test_count+1))
-            print(self.dd)
+            print(self.target_cam_dis)
 
             target, GO = self.predict()
 
@@ -307,7 +307,7 @@ class DualArm_Handover():
                     go_pose = rospy.ServiceProxy("/{0}/go_pose".format(self.arm), ee_pose)
                     resp = go_pose(target)
                     test_count += 1
-                    if self.dd < 0.08:
+                    if self.target_cam_dis < 0.08:
                         self.go_loop = False
                 except rospy.ServiceException as exc:
                     print("service did not process request: " + str(exc))
@@ -430,7 +430,7 @@ class DualArm_Handover():
             self.pred_img_pub.publish(p)
 
             camera_x, camera_y, camera_z = self.getXYZ(x, y, z)
-            self.dd = camera_z
+            self.target_cam_dis = camera_z
 
             rot = Rotation.from_euler('xyz', [A[pred_id], 0, 0], degrees=True) 
 
