@@ -41,6 +41,11 @@ class DualArm_Handover():
         self.fy = info.P[5]
         self.cx = info.P[2]
         self.cy = info.P[6]
+        self.f_x = 0
+        self.f_y = 0
+        self.f_z = 0
+        self.dd = 1000
+        self.fric = 0.5
 
 
         # ddqn agent
@@ -64,8 +69,10 @@ class DualArm_Handover():
         self.force = rospy.Subscriber("/robotiq_ft_wrench", WrenchStamped, self.force_detect)
 
         # Service
-        rospy.Service('~grasp', Trigger, self.strategy)
-        rospy.Service('~cl_grasp', Trigger, self.Close_Loop_strategy)
+        rospy.Service('~grasp_pa', Trigger, self.strategy_pa)
+        rospy.Service('~cl_grasp_pa', Trigger, self.Close_Loop_strategy_pa)
+        rospy.Service('~grasp_in', Trigger, self.strategy_in)
+        rospy.Service('~cl_grasp_in', Trigger, self.Close_Loop_strategy_in)
         rospy.Service('~change_hand', Trigger, self.switch_srv)
         self.reset_arm()
         rospy.loginfo('System startup is complete ! The Taker is '+self.arm)
@@ -119,7 +126,7 @@ class DualArm_Handover():
         self.color_left = colorL
         self.depth_left = depthL
 
-    def strategy(self, req):
+    def strategy_pa(self, req):
         res = TriggerResponse()
 
         r = TriggerRequest()
