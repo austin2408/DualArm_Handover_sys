@@ -70,10 +70,10 @@ class DualArm_Handover():
         self.force = rospy.Subscriber("/robotiq_ft_wrench", WrenchStamped, self.force_detect)
 
         # Service
-        rospy.Service('~grasp_pa', Trigger, self.strategy_pa)
-        rospy.Service('~cl_grasp_pa', Trigger, self.Close_Loop_strategy_pa)
-        rospy.Service('~grasp_in', Trigger, self.strategy_in)
-        rospy.Service('~cl_grasp_in', Trigger, self.Close_Loop_strategy_in)
+        rospy.Service('~grasp_pa', Trigger, self.Static_Passive_strategy)
+        rospy.Service('~cl_grasp_pa', Trigger, self.Dynamic_Passive_strategy)
+        rospy.Service('~grasp_in', Trigger, self.Static_Active_strategy)
+        rospy.Service('~cl_grasp_in', Trigger, self.Dynamic_Active_strategy)
         rospy.Service('~change_hand', Trigger, self.switch_srv)
 
         # Initial
@@ -131,7 +131,7 @@ class DualArm_Handover():
         self.depth_left = depthL
 
     # Deal with Static / Passive scenario
-    def strategy_pa(self, req):
+    def Static_Passive_strategy(self, req):
         res = TriggerResponse()
 
         r = TriggerRequest()
@@ -181,7 +181,7 @@ class DualArm_Handover():
         return res
 
     # Deal with Static / Active scenario
-    def strategy_in(self, req):
+    def Static_Active_strategy(self, req):
         self.arm = 'right_arm'
 
         res = TriggerResponse()
@@ -240,7 +240,7 @@ class DualArm_Handover():
         return res
 
     # Deal with Dynamic / Passive scenario
-    def Close_Loop_strategy_pa(self, req):
+    def Dynamic_Passive_strategy(self, req):
         res = TriggerResponse()
 
         self.open_gripper(self.arm)
@@ -287,7 +287,7 @@ class DualArm_Handover():
         return res
 
     # Deal with Dynamic / Active scenario
-    def Close_Loop_strategy_in(self, req):
+    def Dynamic_Active_strategy(self, req):
         self.arm = 'right_arm'
         res = TriggerResponse()
 
