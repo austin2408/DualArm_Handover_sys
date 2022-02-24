@@ -239,8 +239,8 @@ class DualArm_Handover():
 
         return res
 
-    def Close_Loop_strategy(self, req):
-        self.arm = 'right_arm'
+    def Close_Loop_strategy_pa(self, req):
+        # self.arm = 'right_arm'
         res = TriggerResponse()
 
         self.open_gripper(self.arm)
@@ -249,34 +249,40 @@ class DualArm_Handover():
 
         self.go_loop = True
 
+        # self.fric = 0.45
+
+
         while self.go_loop:
             rospy.loginfo('Loop '+str(test_count+1))
             print(self.dd)
 
-            for i in range(5):
-                target, GO = self.predict()
+            # for i in range(5):
+            # if test_count == 1:
+            #     self.fric = 1.0
+            # else:
+            #     self.fric = 0.45
+            target, GO = self.predict()
 
-                if GO and target!=None:
-                    try:
-                        go_pose = rospy.ServiceProxy("/{0}/go_pose".format(self.arm), ee_pose)
-                        # print(target)
-                        resp = go_pose(target)
-                        test_count += 1
-                        if self.dd < 0.04:
-                            self.go_loop = False
-                        break
-                    except rospy.ServiceException as exc:
-                        print("service did not process request: " + str(exc))
+            if GO and target!=None:
+                try:
+                    go_pose = rospy.ServiceProxy("/{0}/go_pose".format(self.arm), ee_pose)
+                    print(target)
+                    resp = go_pose(target)
+                    test_count += 1
+                    if self.dd < 0.04:
+                    # if self.fric == 1.0:
+                        self.go_loop = False
+                    # break
+                except rospy.ServiceException as exc:
+                    print("service did not process request: " + str(exc))
 
-                else:        
-                    if i == 4:
-                        test_count += 1
+            # else:        
+                # if i == 4:
+                # test_count += 1
 
-            rospy.sleep(0.5)
+            rospy.sleep(1)
 
-        rospy.sleep(1)
-        print("Waiting ......")
-        self.check_gripper()
+        self.close_gripper(self.arm)
 
         rospy.sleep(0.5)
 
