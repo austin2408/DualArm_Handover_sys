@@ -6,6 +6,7 @@ import rospkg
 import message_filters
 from cv_bridge import CvBridge, CvBridgeError
 from sensor_msgs.msg import CameraInfo, CompressedImage, Image
+from std_msgs.msg import Float32MultiArray
 from geometry_msgs.msg import PoseStamped, WrenchStamped
 from std_srvs.srv import Trigger, TriggerResponse, TriggerRequest
 import rospy
@@ -55,6 +56,8 @@ class DualArm_Handover():
 
         # Publisher
         self.pred_img_pub = rospy.Publisher('~prediction/image', Image, queue_size=1)
+        self.dis_pub_right = rospy.Publisher('~right_arm/target_cam_dis', Float32MultiArray, queue_size=1)
+        self.dis_pub_left = rospy.Publisher('~left_arm/target_cam_dis', Float32MultiArray, queue_size=1)
 
         # Mssage filter
         self.color_right = message_filters.Subscriber('/camera_right/color/image_raw/compressed', CompressedImage)
@@ -103,6 +106,15 @@ class DualArm_Handover():
         res.success = True
 
         return res
+
+    def pub_distance(self, sign):
+        Dis = Float32MultiArray()
+        Dis.data = [sign, self.target_cam_dis]
+
+        if self.arm == 'right_arm':
+            self.dis_pub_right.publish(Dis)
+        else:
+            self.dis_pub_left.publish(Dis)
 
     def check_gripper(self):
         x = self.f_x
@@ -262,7 +274,10 @@ class DualArm_Handover():
                     resp = go_pose(target)
                     test_count += 1
                     if self.target_cam_dis < 0.04:
+                        self.pub_distance(1)
                         self.go_loop = False
+                    else:
+                        self.pub_distance(0)
                     # break
                 except rospy.ServiceException as exc:
                     print("service did not process request: " + str(exc))
@@ -310,7 +325,10 @@ class DualArm_Handover():
                     resp = go_pose(target)
                     test_count += 1
                     if self.target_cam_dis < 0.08:
+                        self.pub_distance(1)
                         self.go_loop = False
+                    else:
+                        self.pub_distance(0)
                 except rospy.ServiceException as exc:
                     print("service did not process request: " + str(exc))
 
