@@ -241,7 +241,7 @@ class Move(smach.State):
     def execute(self, userdata):
         rospy.loginfo('Executing state Move')
 
-        # Go pose
+        # Go target
         try:
             go_pose = rospy.ServiceProxy("/{0}/go_pose".format(self.arm), ee_pose)
             resp = go_pose(target)
