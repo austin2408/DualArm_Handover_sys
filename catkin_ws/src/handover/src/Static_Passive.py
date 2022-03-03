@@ -55,7 +55,7 @@ class Init(smach.State):
 
         return 'init'
 
-#
+# Make pose prediction
 class Detect(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['sucess','fail'])
@@ -232,6 +232,7 @@ class Detect(smach.State):
         else:
             return 'sucess'
 
+# Go target
 class Move(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['move'])
@@ -250,6 +251,7 @@ class Move(smach.State):
         return 'move'
 
 
+# Grasp object and move back
 class Close_gripper_back(smach.State):
     def __init__(self):
         smach.State.__init__(self, outcomes=['close'])
