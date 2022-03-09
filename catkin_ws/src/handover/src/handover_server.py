@@ -18,7 +18,8 @@ warnings.filterwarnings("ignore")
 # Create a trivial action server
 class HandoverServer:
     def __init__(self, name, arm='right_arm', force=False):
-        self._sas = SimpleActionServer(name, TestAction, execute_cb=self.execute_cb)
+        self._sas = SimpleActionServer(name, TestAction, execute_cb=self.execute_cb, auto_start=False)
+        self._sas.start()
         self.r = TriggerRequest()
         info = rospy.wait_for_message('camera_right/color/camera_info', CameraInfo)
         self.arm = arm
@@ -43,6 +44,7 @@ class HandoverServer:
         if force:
             self.force = rospy.Subscriber("/robotiq_ft_wrench", WrenchStamped, self.callback_force_msgs)
 
+        rospy.loginfo("Server Initial Complete")
         """
         goal = 0 : Init
              = 1 : Detect
@@ -80,7 +82,7 @@ class HandoverServer:
                 self._sas.set_aborted()
             
             self._sas.set_succeeded()
-            time.sleep(2.5)
+            time.sleep(1)
         # Detect
         elif msg.goal == 1:
             self.target, _, self.dis = self.pred.predict(self.color, self.depth)
@@ -88,7 +90,7 @@ class HandoverServer:
                 self._sas.set_aborted()
             else:
                 self._sas.set_succeeded()
-            time.sleep(2.5)
+            time.sleep(1)
         # Move_to (open)
         elif msg.goal == 2:
             # Go target
@@ -100,7 +102,7 @@ class HandoverServer:
                 self._sas.set_aborted()
 
             self._sas.set_succeeded()
-            time.sleep(2.5)
+            time.sleep(0.5)
         # Move_to (close)
         elif msg.goal == 3:
             # Go target
@@ -115,7 +117,7 @@ class HandoverServer:
                 self._sas.set_succeeded()
             else:
                 self._sas.set_aborted()
-            time.sleep(2.5)
+            time.sleep(0.5)
         # Grasp and back
         elif msg.goal == 4:
             try:
@@ -154,7 +156,7 @@ class HandoverServer:
                 self._sas.set_aborted()
             
             self._sas.set_succeeded()
-            time.sleep(2.5)
+            # time.sleep(2.5)
         # Wait object
         elif msg.goal == 5:
             x = self.f_x
@@ -163,8 +165,9 @@ class HandoverServer:
                     break
 
             self._sas.set_succeeded()
-            time.sleep(2.5)
+            # time.sleep(2.5)
 
 if __name__ == '__main__':
+    rospy.init_node('handover_server')
     server = HandoverServer('handover_action')
     rospy.spin()
