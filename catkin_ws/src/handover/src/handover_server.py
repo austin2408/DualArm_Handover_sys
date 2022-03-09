@@ -6,7 +6,7 @@ from HANet.utils import Affordance_predict
 import message_filters
 from sensor_msgs.msg import CameraInfo, CompressedImage, Image
 from geometry_msgs.msg import WrenchStamped
-from std_srvs.srv import Trigger, TriggerRequest
+from std_srvs.srv import Trigger, TriggerRequest, TriggerResponse
 import rospy
 import warnings
 from smach_tutorials.msg import TestAction
@@ -44,6 +44,7 @@ class HandoverServer:
         if force:
             self.force = rospy.Subscriber("/robotiq_ft_wrench", WrenchStamped, self.callback_force_msgs)
 
+        rospy.Service('~switch_loop', Trigger, self.switch_loop)
         rospy.loginfo("Server Initial Complete")
         """
         goal = 0 : Init
@@ -53,6 +54,12 @@ class HandoverServer:
              = 4 : Close_and_back
              = 5 : Wait
         """
+    def switch_loop(self, req):
+        res = TriggerResponse()
+        self.pred.switch()
+        res.success = True
+
+        return res
     def callback_img_msgs(self, color_msg, depth_msg):
         self.color = color_msg
         self.depth = depth_msg
