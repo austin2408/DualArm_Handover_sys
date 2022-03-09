@@ -152,7 +152,7 @@ class HandoverServer:
             # time.sleep(2.5)
         # Check distance
         elif msg.goal == 4:
-            if self.dis <= 0.4:
+            if self.dis <= 0.08:
                 self._sas.set_succeeded()
             else:
                 self._sas.set_aborted()
