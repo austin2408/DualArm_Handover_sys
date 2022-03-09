@@ -28,6 +28,7 @@ class HandoverServer:
         self.f_x = 0
         self.f_y = 0
         self.f_z = 0
+        self.dis = None
         self.pred = Affordance_predict(self.arm, info.P[0], info.P[5], info.P[2], info.P[6])
         if arm == 'right_arm':
             self.color_sub = message_filters.Subscriber('/camera_right/color/image_raw/compressed', CompressedImage)
@@ -45,9 +46,10 @@ class HandoverServer:
         """
         goal = 0 : Init
              = 1 : Detect
-             = 2 : Move_to
-             = 3 : Close_and_back
-             = 4 : Wait
+             = 2 : Move_to (open_loop)
+             = 3 : Move_to (close_loop)
+             = 4 : Close_and_back
+             = 5 : Wait
         """
     def callback_img_msgs(self, color_msg, depth_msg):
         self.color = color_msg
@@ -81,27 +83,41 @@ class HandoverServer:
             time.sleep(2.5)
         # Detect
         elif msg.goal == 1:
-            self.target, _ = self.pred.predict(self.color, self.depth)
+            self.target, _, self.dis = self.pred.predict(self.color, self.depth)
             if self.target == None:
                 self._sas.set_aborted()
             else:
                 self._sas.set_succeeded()
             time.sleep(2.5)
-        # Move_to
+        # Move_to (open)
         elif msg.goal == 2:
             # Go target
             try:
                 go_pose = rospy.ServiceProxy("/{0}/go_pose".format(self.arm), ee_pose)
                 resp = go_pose(self.target)
-                self._sas.set_succeeded()
             except rospy.ServiceException as exc:
                 print("service did not process request: " + str(exc))
                 self._sas.set_aborted()
 
+            self._sas.set_succeeded()
+            time.sleep(2.5)
+        # Move_to (close)
+        elif msg.goal == 3:
+            # Go target
+            try:
+                go_pose = rospy.ServiceProxy("/{0}/go_pose".format(self.arm), ee_pose)
+                resp = go_pose(self.target)
+            except rospy.ServiceException as exc:
+                print("service did not process request: " + str(exc))
+                self._sas.set_aborted()
+
+            if self.dis <= 0.4:
+                self._sas.set_succeeded()
+            else:
+                self._sas.set_aborted()
             time.sleep(2.5)
         # Grasp and back
-        elif msg.goal == 3:
-            # Close gripper
+        elif msg.goal == 4:
             try:
                 go_pose = rospy.ServiceProxy("/{0}/gripper_close".format(self.arm), Trigger)
                 resp = go_pose(self.r)
@@ -109,9 +125,29 @@ class HandoverServer:
                 print("service did not process request: " + str(exc))
                 self._sas.set_aborted()
 
+            rospy.sleep(0.5)
+
+            try:
+                go_pose = rospy.ServiceProxy("/{0}/go_place".format(self.arm), Trigger)
+                resp = go_pose(self.r)
+            except rospy.ServiceException as exc:
+                print("service did not process request: " + str(exc))
+                self._sas.set_aborted()
+
+            rospy.sleep(0.5)
+
+            try:
+                go_pose = rospy.ServiceProxy("/{0}/gripper_open".format(self.arm), Trigger)
+                resp = go_pose(self.r)
+            except rospy.ServiceException as exc:
+                print("service did not process request: " + str(exc))
+                self._sas.set_aborted()
+
+            rospy.sleep(0.5)
+
             # Back
             try:
-                go_pose = rospy.ServiceProxy("/{0}/go_handover".format(self.arm), Trigger)
+                go_pose = rospy.ServiceProxy("/{0}/go_sleep".format(self.arm), Trigger)
                 resp = go_pose(self.r)
             except rospy.ServiceException as exc:
                 print("service did not process request: " + str(exc))
@@ -120,7 +156,7 @@ class HandoverServer:
             self._sas.set_succeeded()
             time.sleep(2.5)
         # Wait object
-        elif msg.goal == 4:
+        elif msg.goal == 5:
             x = self.f_x
             while True:
                 if x != self.f_x:
