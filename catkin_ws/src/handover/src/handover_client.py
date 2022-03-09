@@ -9,7 +9,7 @@ from actionlib import *
 from actionlib_msgs.msg import *
 
 def main():
-    rospy.init_node('pick_and_place_client')
+    rospy.init_node('handover_client')
 
     sm0 = smach.StateMachine(outcomes=['succeeded','aborted','preempted', 'End'])
 
