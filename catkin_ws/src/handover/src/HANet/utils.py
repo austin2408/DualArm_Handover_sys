@@ -1,7 +1,8 @@
 import os
-from model import HANet
+from .model import HANet
 import numpy as np
 import cv2
+import rospy
 from scipy import ndimage
 import torch
 import rospkg
@@ -108,10 +109,20 @@ class Affordance_predict():
         self.listener = TransformListener()
         self.transformer = TransformerROS()
         self.arm = arm
+        self.fric = 0.5
+        self.go_loop = False
         self.fx = fx
         self.fy = fy
         self.cx = cx
         self.cy = cy
+
+    def switch(self):
+        if self.go_loop:
+            rospy.loginfo("Enable Open Loop")
+            self.go_loop = False
+        else:
+            rospy.loginfo("Enable Close Loop")
+            self.go_loop = True
         
 
     def predict(self, color, depth):
@@ -231,6 +242,22 @@ class Affordance_predict():
             tf_pose.target_pose.orientation.y = rot_quat[1]
             tf_pose.target_pose.orientation.z = rot_quat[2]
             tf_pose.target_pose.orientation.w = rot_quat[3]
+
+        if self.go_loop:
+            try:
+                if self.arm == 'right_arm':
+                    self.listener.waitForTransform('right_arm/base_link', 'right_arm/ee_arm_link', rospy.Time(0), rospy.Duration(1.0))
+                    (trans, rot) = self.listener.lookupTransform('right_arm/base_link', 'right_arm/ee_arm_link', rospy.Time(0))
+                else:
+                    self.listener.waitForTransform('left_arm/base_link', 'left_arm/ee_arm_link', rospy.Time(0), rospy.Duration(1.0))
+                    (trans, rot) = self.listener.lookupTransform('left_arm/base_link', 'left_arm/ee_arm_link', rospy.Time(0))
+
+            except (tf.LookupException, tf.ConnectivityException, tf.ExtrapolationException):
+                print("Error TF listening")
+                return
+            tf_pose.target_pose.position.x = (tf_pose.target_pose.position.x + trans[0])*self.fric
+            tf_pose.target_pose.position.y = (tf_pose.target_pose.position.y + trans[1])*self.fric
+            tf_pose.target_pose.position.z = (tf_pose.target_pose.position.z + trans[2])*self.fric
 
         return tf_pose, vaild
 
