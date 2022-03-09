@@ -104,6 +104,7 @@ class Affordance_predict():
         self.net.load_state_dict(torch.load(self.path+'/src/ddqn/weight/HANet.pth'))
         self.net = self.net.cuda()
         self.bridge = CvBridge()
+        self.target_cam_dis = 1000
         self.listener = TransformListener()
         self.transformer = TransformerROS()
         self.arm = arm
@@ -176,9 +177,9 @@ class Affordance_predict():
             if z == 0.0:
                 go_ok = False
             
-            return target_pose, go_ok
+            return target_pose, go_ok, self.target_cam_dis
         else:
-            return None, False
+            return None, False, self.target_cam_dis
 
     def camera2world(self, camera_pose):
         vaild = True
