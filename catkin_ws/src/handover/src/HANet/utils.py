@@ -244,3 +244,5 @@ class Affordance_predict():
         y = (y - self.cy) * zc * inv_fy
         z = zc
 
+        return z, -1*x, -1*y
+
