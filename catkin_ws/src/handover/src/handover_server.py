@@ -49,9 +49,9 @@ class HandoverServer:
         """
         goal = 0 : Init
              = 1 : Detect
-             = 2 : Move_to (open_loop)
-             = 3 : Move_to (close_loop)
-             = 4 : Close_and_back
+             = 2 : Move_to
+             = 3 : Close_and_back
+             = 4 : Check_distance
              = 5 : Wait
         """
     def switch_loop(self, req):
@@ -60,6 +60,7 @@ class HandoverServer:
         res.success = True
 
         return res
+    
     def callback_img_msgs(self, color_msg, depth_msg):
         self.color = color_msg
         self.depth = depth_msg
@@ -98,7 +99,7 @@ class HandoverServer:
             else:
                 self._sas.set_succeeded()
             time.sleep(1)
-        # Move_to (open)
+        # Move_to
         elif msg.goal == 2:
             # Go target
             try:
@@ -110,23 +111,8 @@ class HandoverServer:
 
             self._sas.set_succeeded()
             time.sleep(0.5)
-        # Move_to (close)
-        elif msg.goal == 3:
-            # Go target
-            try:
-                go_pose = rospy.ServiceProxy("/{0}/go_pose".format(self.arm), ee_pose)
-                resp = go_pose(self.target)
-            except rospy.ServiceException as exc:
-                print("service did not process request: " + str(exc))
-                self._sas.set_aborted()
-
-            if self.dis <= 0.4:
-                self._sas.set_succeeded()
-            else:
-                self._sas.set_aborted()
-            time.sleep(0.5)
         # Grasp and back
-        elif msg.goal == 4:
+        elif msg.goal == 3:
             try:
                 go_pose = rospy.ServiceProxy("/{0}/gripper_close".format(self.arm), Trigger)
                 resp = go_pose(self.r)
@@ -164,6 +150,13 @@ class HandoverServer:
             
             self._sas.set_succeeded()
             # time.sleep(2.5)
+        # Check distance
+        elif msg.goal == 4:
+            if self.dis <= 0.4:
+                self._sas.set_succeeded()
+            else:
+                self._sas.set_aborted()
+            rospy.sleep(0.5)
         # Wait object
         elif msg.goal == 5:
             x = self.f_x
