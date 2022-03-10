@@ -8,10 +8,10 @@ if(NOT ANDROID)
 
   if(PYTHONLIBS_VERSION_STRING VERSION_LESS "3.8")
     # Debian Buster
-    find_package(Boost REQUIRED python37)
+    # find_package(Boost REQUIRED python37)
   else()
     # Ubuntu Focal
-    find_package(Boost REQUIRED python)
+    # find_package(Boost REQUIRED python)
   endif()
 else()
 find_package(Boost REQUIRED)
