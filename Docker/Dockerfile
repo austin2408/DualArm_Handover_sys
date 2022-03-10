@@ -227,7 +227,7 @@ RUN cd ${HOME} && git clone https://github.com/pybind/pybind11.git \
 RUN chown -R ${USER}:${USER} ${HOME}/
 RUN echo "medical_bed ALL=(ALL)  ALL" > /etc/sudoers
 
-RUN echo "source /opt/ros/noetic/setup.bash" >> ${HOME}/.bashrc
+RUN echo "source /opt/ros/$ROS_DISTRO/setup.bash" >> ${HOME}/.bashrc
 
 # Support of nvidia-docker 2.0
 ENV NVIDIA_VISIBLE_DEVICES=all
