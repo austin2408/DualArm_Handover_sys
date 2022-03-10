@@ -61,7 +61,7 @@ docker run \
     -v "/var/run/docker.sock:/var/run/docker.sock" \
     -w "/home/medical_bed/DualArm_Handover_sys" \
     --user "root:root" \
-    --name pnp \
+    --name pp \
     --network host \
     --privileged \
     --security-opt seccomp=unconfined \
