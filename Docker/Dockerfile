@@ -1,14 +1,14 @@
-FROM nvidia/cuda:11.2.0-cudnn8-runtime-ubuntu20.04
+FROM nvidia/cuda:11.2.0-cudnn8-runtime-ubuntu18.04
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
-ENV ROS_DISTRO noetic
+ENV ROS_DISTRO melodic
 
 ###################################### user #####################################
 
 ENV SHELL=/bin/bash \
-    USER=kl \
+    USER=medical_bed \
     UID=1000 \
     LANG=en_US.UTF-8 \
     LANGUAGE=en_US.UTF-8
@@ -67,15 +67,19 @@ RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main"
 
 RUN apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
 
+
 # install bootstrap tools
 RUN apt-get -o Acquire::ForceIPv4=true update && apt-get -o Acquire::ForceIPv4=true install --no-install-recommends -y \
     ros-$ROS_DISTRO-desktop-full \
+    ros-$ROS_DISTRO-serial \
     ros-$ROS_DISTRO-soem \
     ros-$ROS_DISTRO-openslam-gmapping \
     ros-$ROS_DISTRO-geodesy \
+    ros-$ROS_DISTRO-cartographer-* \
     ros-$ROS_DISTRO-ddynamic-reconfigure \
     ros-$ROS_DISTRO-perception \
     ros-$ROS_DISTRO-rgbd-launch \
+    ros-$ROS_DISTRO-joystick-drivers \
     ros-$ROS_DISTRO-pointcloud-to-laserscan \
     ros-$ROS_DISTRO-robot-localization \
     ros-$ROS_DISTRO-spacenav-node \
@@ -92,10 +96,10 @@ RUN apt-get -o Acquire::ForceIPv4=true update && apt-get -o Acquire::ForceIPv4=t
     ros-$ROS_DISTRO-rosserial-arduino \
     ros-$ROS_DISTRO-rosserial \
     ros-$ROS_DISTRO-socketcan-interface \
-    ros-$ROS_DISTRO-moveit \
     ros-$ROS_DISTRO-moveit-planners-ompl \
     ros-$ROS_DISTRO-moveit-* \
-    ros-$ROS_DISTRO-ur-* \
+    ros-$ROS_DISTRO-moveit \
+    ros-$ROS_DISTRO-moveit-visual-tools \
     ros-$ROS_DISTRO-velocity-controllers \
     ros-$ROS_DISTRO-joint-state-controller \
     ros-$ROS_DISTRO-joint-trajectory-controller \
@@ -104,19 +108,22 @@ RUN apt-get -o Acquire::ForceIPv4=true update && apt-get -o Acquire::ForceIPv4=t
     ros-$ROS_DISTRO-force-torque-sensor-controller \
     ros-$ROS_DISTRO-industrial-msgs \
     ros-$ROS_DISTRO-effort-controllers \
-    ros-$ROS_DISTRO-dynamixel-sdk \
-    ros-$ROS_DISTRO-franka-* \
-    python3-rosdep \
-    python3-rosinstall \
-    python3-rosinstall-generator \
-    python3-wstool \
+    ros-$ROS_DISTRO-nmea-msgs \
+    ros-$ROS_DISTRO-rosserial-server \
+    ros-$ROS_DISTRO-dynamixel-workbench-toolbox \
+    ros-$ROS_DISTRO-trac-ik \
+    ros-$ROS_DISTRO-vision-msgs \
+    python-rosdep \
+    python-rosinstall \
+    python-rosinstall-generator \
+    python-wstool \
     && rm -rf /var/lib/apt/lists/*
 
 RUN rosdep init \
     && rosdep update
 
 ##################################### Serial ######################################
-ENV CMAKE_PREFIX_PATH /opt/ros/noetic
+ENV CMAKE_PREFIX_PATH /opt/ros/$ROS_DISTRO
 
 RUN cd ${HOME} && git clone https://github.com/wjwwood/serial.git \
     && cd serial \
@@ -183,6 +190,13 @@ RUN python3 -m pip install -U pip
 
 RUN python3 -m pip install \
     torch==1.9.0+cu111 torchvision==0.10.0+cu111 torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html
+
+RUN apt-get update && apt-get install -y \
+    ros-$ROS_DISTRO-smach \
+    ros-$ROS_DISTRO-smach-msgs \
+    ros-$ROS_DISTRO-smach-ros \
+    ros-$ROS_DISTRO-executive-smach \
+    ros-$ROS_DISTRO-smach-viewer
 
 ####################################### procman ###########################################
 
