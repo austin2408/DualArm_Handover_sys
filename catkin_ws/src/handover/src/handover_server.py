@@ -41,8 +41,8 @@ class HandoverServer:
         ts = message_filters.ApproximateTimeSynchronizer([self.color_sub, self.depth_sub], 5, 5)
         ts.registerCallback(self.callback_img_msgs)
 
-        if force:
-            self.force = rospy.Subscriber("/robotiq_ft_wrench", WrenchStamped, self.callback_force_msgs)
+        # if fcorce:
+        self.force = rospy.Subscriber("/robotiq_ft_wrench", WrenchStamped, self.callback_force_msgs)
 
         rospy.Service('~switch_loop', Trigger, self.switch_loop)
         rospy.loginfo("Server Initial Complete")
@@ -152,6 +152,7 @@ class HandoverServer:
             # time.sleep(2.5)
         # Check distance
         elif msg.goal == 4:
+            rospy.loginfo(str(self.dis))
             if self.dis <= 0.08:
                 self._sas.set_succeeded()
             else:
@@ -159,6 +160,7 @@ class HandoverServer:
             rospy.sleep(0.5)
         # Wait object
         elif msg.goal == 5:
+            rospy.sleep(1)
             x = self.f_x
             while True:
                 if x != self.f_x:
