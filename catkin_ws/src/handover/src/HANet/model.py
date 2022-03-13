@@ -14,7 +14,7 @@ from scipy import ndimage
 
 class HANet(nn.Module):
     def __init__(self, n_classes):
-        super(HERo, self).__init__()
+        super(HANet, self).__init__()
         self.color_trunk = torchvision.models.resnet101(pretrained=True)
         del self.color_trunk.fc, self.color_trunk.avgpool, self.color_trunk.layer4
         self.depth_trunk = copy.deepcopy(self.color_trunk)
