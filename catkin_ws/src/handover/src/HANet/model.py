@@ -1,16 +1,10 @@
-from pickle import TRUE
-import numpy as np
 import copy
-from numpy.lib.utils import deprecate
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.autograd import Variable
 import torchvision
-from torchvision import transforms as TF
-from collections import OrderedDict
-from scipy import ndimage
-
+import ctypes
+libgcc_s = ctypes.CDLL('libgcc_s.so.1')
 
 class HANet(nn.Module):
     def __init__(self, n_classes):
