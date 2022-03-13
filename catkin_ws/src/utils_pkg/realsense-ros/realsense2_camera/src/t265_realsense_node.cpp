@@ -10,9 +10,7 @@ T265RealsenseNode::T265RealsenseNode(ros::NodeHandle& nodeHandle,
                                      _wo_snr(dev.first<rs2::wheel_odometer>()),
                                      _use_odom_in(false) 
                                      {
-                                         _monitor_options = {RS2_OPTION_ASIC_TEMPERATURE, RS2_OPTION_MOTION_MODULE_TEMPERATURE};
                                          initializeOdometryInput();
-                                         handleWarning();
                                      }
 
 void T265RealsenseNode::initializeOdometryInput()
@@ -25,7 +23,7 @@ void T265RealsenseNode::initializeOdometryInput()
         return;
     }
     std::ifstream calibrationFile(calib_odom_file);
-    if (!calibrationFile)
+    if (not calibrationFile)
     {
         ROS_FATAL_STREAM("calibration_odometry file not found. calib_odom_file = " << calib_odom_file);
         throw std::runtime_error("calibration_odometry file not found" );
@@ -42,36 +40,15 @@ void T265RealsenseNode::initializeOdometryInput()
     _use_odom_in = true;
 }
 
-void T265RealsenseNode::toggleSensors(bool enabled)
-{
-  ROS_WARN_STREAM("toggleSensors method not implemented for T265");
-}
-
 void T265RealsenseNode::publishTopics()
 {
     BaseRealSenseNode::publishTopics();
     setupSubscribers();
 }
 
-void  T265RealsenseNode::handleWarning()
-{
-    rs2::log_to_callback( rs2_log_severity::RS2_LOG_SEVERITY_WARN, [&]
-      ( rs2_log_severity severity, rs2::log_message const & msg ) noexcept {
-        _T265_fault =  msg.raw();
-        std::array<std::string, 2> list_of_fault{"SLAM_ERROR", "Stream transfer failed, exiting"};
-        auto it = std::find_if(begin(list_of_fault), end(list_of_fault),
-                  [&](const std::string& s) {return _T265_fault.find(s) != std::string::npos; });
-        if (it != end(list_of_fault))
-        {
-          callback_updater.add("Warning ",this, & T265RealsenseNode::warningDiagnostic);
-          callback_updater.force_update();
-        }
-    });
-}
-
 void T265RealsenseNode::setupSubscribers()
 {
-    if (!_use_odom_in) return;
+    if (not _use_odom_in) return;
 
     std::string topic_odom_in;
     _pnh.param("topic_odom_in", topic_odom_in, DEFAULT_TOPIC_ODOM_IN);
@@ -82,12 +59,12 @@ void T265RealsenseNode::setupSubscribers()
 
 void T265RealsenseNode::odom_in_callback(const nav_msgs::Odometry::ConstPtr& msg)
 {
-    ROS_DEBUG("Got in_odom message");
+    ROS_INFO("Got in_odom message");
     rs2_vector velocity {-(float)(msg->twist.twist.linear.y),
                           (float)(msg->twist.twist.linear.z),
                          -(float)(msg->twist.twist.linear.x)};
 
-    ROS_DEBUG_STREAM("Add odom: " << velocity.x << ", " << velocity.y << ", " << velocity.z);
+    ROS_INFO_STREAM("Add odom: " << velocity.x << ", " << velocity.y << ", " << velocity.z);
     _wo_snr.send_wheel_odometry(0, 0, velocity);
 }
 
@@ -95,7 +72,7 @@ void T265RealsenseNode::calcAndPublishStaticTransform(const stream_index_pair& s
 {
     // Transform base to stream
     tf::Quaternion quaternion_optical;
-    quaternion_optical.setRPY(M_PI / 2, 0.0, -M_PI / 2);    //Pose To ROS
+    quaternion_optical.setRPY(M_PI / 2, 0.0, -M_PI / 2);
     float3 zero_trans{0, 0, 0};
 
     ros::Time transform_ts_ = ros::Time::now();
@@ -124,6 +101,8 @@ void T265RealsenseNode::calcAndPublishStaticTransform(const stream_index_pair& s
     if (stream == POSE)
     {
         Q = Q.inverse();
+        quaternion_optical = quaternion_optical.inverse();
+
         publish_static_tf(transform_ts_, trans, Q, _frame_id[stream], _base_frame_id);
     }
     else
@@ -138,9 +117,4 @@ void T265RealsenseNode::calcAndPublishStaticTransform(const stream_index_pair& s
             publish_static_tf(transform_ts_, zero_trans, quaternion_optical, _depth_aligned_frame_id[stream], _optical_frame_id[stream]);
         }
     }
-}
-
-void T265RealsenseNode::warningDiagnostic(diagnostic_updater::DiagnosticStatusWrapper& status)
-{
-  status.summary(diagnostic_msgs::DiagnosticStatus::WARN, _T265_fault);
 }

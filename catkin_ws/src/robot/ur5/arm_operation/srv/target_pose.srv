@@ -1,4 +1,0 @@
-geometry_msgs/Pose target_pose
-float32 factor
----
-string plan_result

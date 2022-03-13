@@ -1,4 +1,4 @@
-FROM nvidia/cuda:11.2.0-cudnn8-runtime-ubuntu18.04
+FROM nvidia/cuda:10.1-cudnn7-runtime-ubuntu18.04
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV LANG C.UTF-8
@@ -46,6 +46,12 @@ RUN apt-get -o Acquire::ForceIPv4=true update && apt-get -yq dist-upgrade \
     libcanberra-gtk-module \
     libcanberra-gtk3-module \
     libpcap-dev \
+    python-gtk2 \
+    python-gobject \
+    python-tk \
+    python-lxml \
+    python-pymodbus \
+    python-pip \
     python3-pip \
     python3-setuptools \
     python3-opencv \
@@ -53,11 +59,6 @@ RUN apt-get -o Acquire::ForceIPv4=true update && apt-get -yq dist-upgrade \
     python3-empy  \
     python3-lxml \
     python3-pymodbus \
-    terminator \
-    screen \
-    openssh-server \
-    libglfw3-dev \
-    iputils-ping \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -66,7 +67,6 @@ RUN apt-get -o Acquire::ForceIPv4=true update && apt-get -yq dist-upgrade \
 RUN sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
 
 RUN apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
-
 
 # install bootstrap tools
 RUN apt-get -o Acquire::ForceIPv4=true update && apt-get -o Acquire::ForceIPv4=true install --no-install-recommends -y \
@@ -96,10 +96,10 @@ RUN apt-get -o Acquire::ForceIPv4=true update && apt-get -o Acquire::ForceIPv4=t
     ros-$ROS_DISTRO-rosserial-arduino \
     ros-$ROS_DISTRO-rosserial \
     ros-$ROS_DISTRO-socketcan-interface \
+    ros-$ROS_DISTRO-moveit \
     ros-$ROS_DISTRO-moveit-planners-ompl \
     ros-$ROS_DISTRO-moveit-* \
-    ros-$ROS_DISTRO-moveit \
-    ros-$ROS_DISTRO-moveit-visual-tools \
+    ros-$ROS_DISTRO-ur-* \
     ros-$ROS_DISTRO-velocity-controllers \
     ros-$ROS_DISTRO-joint-state-controller \
     ros-$ROS_DISTRO-joint-trajectory-controller \
@@ -108,11 +108,12 @@ RUN apt-get -o Acquire::ForceIPv4=true update && apt-get -o Acquire::ForceIPv4=t
     ros-$ROS_DISTRO-force-torque-sensor-controller \
     ros-$ROS_DISTRO-industrial-msgs \
     ros-$ROS_DISTRO-effort-controllers \
-    ros-$ROS_DISTRO-nmea-msgs \
-    ros-$ROS_DISTRO-rosserial-server \
     ros-$ROS_DISTRO-dynamixel-workbench-toolbox \
-    ros-$ROS_DISTRO-trac-ik \
-    ros-$ROS_DISTRO-vision-msgs \
+    ros-$ROS_DISTRO-smach \
+    ros-$ROS_DISTRO-smach-msgs \
+    ros-$ROS_DISTRO-smach-ros \
+    ros-$ROS_DISTRO-executive-smach \
+    ros-$ROS_DISTRO-smach-viewer \
     python-rosdep \
     python-rosinstall \
     python-rosinstall-generator \
@@ -123,7 +124,7 @@ RUN rosdep init \
     && rosdep update
 
 ##################################### Serial ######################################
-ENV CMAKE_PREFIX_PATH /opt/ros/$ROS_DISTRO
+ENV CMAKE_PREFIX_PATH /opt/ros/melodic
 
 RUN cd ${HOME} && git clone https://github.com/wjwwood/serial.git \
     && cd serial \
@@ -144,14 +145,16 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # set the version of the realsense library
-ENV LIBREALSENSE_VERSION 2.48.0
-RUN cd ${HOME} && git clone https://github.com/IntelRealSense/librealsense.git \
-    && cd librealsense \
-    && git checkout v${LIBREALSENSE_VERSION} \
-    && mkdir build \
-    && cd build \
-    && cmake .. \
-    && make install
+ENV LIBREALSENSE_VERSION 2.36.0
+RUN wget https://github.com/IntelRealSense/librealsense/archive/v${LIBREALSENSE_VERSION}.tar.gz && \
+    tar -xvzf v${LIBREALSENSE_VERSION}.tar.gz && \
+    rm v${LIBREALSENSE_VERSION}.tar.gz && \
+    mkdir -p librealsense-${LIBREALSENSE_VERSION}/build && \
+    cd librealsense-${LIBREALSENSE_VERSION}/build && \
+    cmake .. && \
+    make && \
+    make install && \
+    rm -rf librealsense-${LIBREALSENSE_VERSION}
 
 ##################################### PIP3 ######################################
 
@@ -172,18 +175,8 @@ RUN pip3 install \
     seaborn \
     easydict \
     lmdb \  
-    shapely \
-    wandb \
-    virtualenv \
-    pytest \
-    flask \
-    flask-socketio \
-    loguru \
-    pymongo \
-    tensorflow \
-    tqdm \
-    modern_robotics
-
+    shapely 
+    
 ##################################### Pytorch ######################################
 
 RUN python3 -m pip install -U pip 
@@ -192,11 +185,23 @@ RUN python3 -m pip install \
     torch==1.9.0+cu111 torchvision==0.10.0+cu111 torchaudio==0.9.0 -f https://download.pytorch.org/whl/torch_stable.html
 
 RUN apt-get update && apt-get install -y \
-    ros-$ROS_DISTRO-smach \
-    ros-$ROS_DISTRO-smach-msgs \
-    ros-$ROS_DISTRO-smach-ros \
-    ros-$ROS_DISTRO-executive-smach \
-    ros-$ROS_DISTRO-smach-viewer
+    ros-melodic-smach \
+    ros-melodic-smach-msgs \
+    ros-melodic-smach-ros \
+    ros-melodic-executive-smach \
+    ros-melodic-smach-viewer
+
+##################################### PIP2 ######################################
+
+RUN pip2 install --upgrade pip setuptools
+
+RUN pip2 install pyquaternion \
+    lmdb \
+    easydict \
+    colour \
+    shapely 
+
+RUN pip2 install torch==1.4.0 torchvision==0.5.0
 
 ####################################### procman ###########################################
 
@@ -214,13 +219,17 @@ RUN cd ${HOME} && git clone https://github.com/ARG-NCTU/procman \
     && cmake .. \
     && make install
 
-##################################### pybind11 ######################################
+#################################### GTSAM ####################################
 
-RUN cd ${HOME} && git clone https://github.com/pybind/pybind11.git \
-    && cd pybind11 \
+RUN apt-get update 
+
+RUN cd ${HOME}/ \
+    && git clone https://github.com/borglab/gtsam.git \
+    && cd gtsam/ \
     && mkdir build \
     && cd build \
-    && cmake ../ -DCMAKE_INSTALL_PREFIX=${CMAKE_PREFIX_PATH} && make && make install 
+    && cmake .. \
+    && make install 
 
 ##################################### setting #####################################
 

@@ -1,63 +1,51 @@
 sudo: required
-matrix:
-    include:
-        - dist: xenial
-        - dist: bionic
-        - dist: focal
+dist: xenial
 
   # - git clone -v --progress https://github.com/doronhi/realsense.git  # This is Done automatically by TravisCI
 before_install:
-  - if [[ $(lsb_release -sc) == "xenial" ]]; then _python=python; _ros_dist=kinetic;
-    elif [[ $(lsb_release -sc) == "bionic" ]]; then _python=python; _ros_dist=melodic;
-    elif [[ $(lsb_release -sc) == "focal" ]]; then _python=python3; _ros_dist=noetic; fi
-  - echo _python:$_python
-  - echo _ros_dist:$_ros_dist
-  - sudo apt-key adv --keyserver hkp://keys.gnupg.net:80 --recv-key C8B3A55A6F3EFCDE
-  - sudo add-apt-repository "deb https://librealsense.intel.com/Debian/apt-repo $(lsb_release -cs) main"
+  - echo 'deb http://realsense-hw-public.s3.amazonaws.com/Debian/apt-repo xenial main' || sudo tee /etc/apt/sources.list.d/realsense-public.list
+  # - sudo apt-key adv --keyserver keys.gnupg.net --recv-key C8B3A55A6F3EFCDE || sudo apt-key adv --keyserver hkp://keys.gnupg.net:80 --recv-key C8B3A55A6F3EFCDE
+  - sudo add-apt-repository "deb http://realsense-hw-public.s3.amazonaws.com/Debian/apt-repo xenial main"
   - sudo apt-get update -qq
-  - sudo apt-get install librealsense2-dkms --allow-unauthenticated -y
+  - sudo apt-get install librealsense2-dkms --allow-unauthenticated -y 
   - sudo apt-get install librealsense2-dev --allow-unauthenticated -y
-
+  
 install:
   # install ROS:
-  - echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/ros-latest.list
-  - sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
+  - sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+  - sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 421C365BD9FF1F717815A3895523BAEEB01FA116
   - sudo apt-get update -qq
-  - sudo apt-get install ros-$_ros_dist-ros-base -y
-  - sudo apt install "$_python"-rosdep -y
+  - sudo apt-get install ros-kinetic-ros-base -y
   - sudo rosdep init
   - rosdep update
-  - echo "source /opt/ros/$_ros_dist/setup.bash" >> ~/.bashrc
-  - if [[ $(lsb_release -sc) == "bionic" ]] || [[ $(lsb_release -sc) == "focal" ]]; then
-    sudo apt-get install libeigen3-dev;
-    fi
+  - echo "source /opt/ros/kinetic/setup.bash" >> ~/.bashrc
+  - sudo apt-get install ros-kinetic-cv-bridge -y
+  - sudo apt-get install ros-kinetic-image-transport
+  - sudo apt-get install ros-kinetic-tf -y
+  - sudo apt-get install ros-kinetic-diagnostic-updater -y
   - source ~/.bashrc
   - mkdir -p ~/catkin_ws/src/realsense
 
   # install realsense2-camera
   - mv * ~/catkin_ws/src/realsense/     # This leaves behind .git, .gitignore and .travis.yml but no matter.
   - cd ~/catkin_ws/src/
-  - catkin_init_workspace
+  - catkin_init_workspace 
   - cd ..
-  - rosdep install --from-paths src --ignore-src -r -y
-  - sudo apt purge ros-$_ros_dist-librealsense2
   - catkin_make clean
   - catkin_make -DCATKIN_ENABLE_TESTING=False -DCMAKE_BUILD_TYPE=Release
   - catkin_make install
   - echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
   - source ~/.bashrc
-
-    # download data:
-  - bag_filename="https://librealsense.intel.com/rs-tests/TestData/outdoors_1color.bag";
-  - wget $bag_filename -P "records/"
-  - bag_filename="https://librealsense.intel.com/rs-tests/D435i_Depth_and_IMU_Stands_still.bag";
-  - wget $bag_filename -P "records/"
   
+    # download data:
+  - bag_filename="http://realsense-hw-public.s3.amazonaws.com/rs-tests/TestData/outdoors.bag";
+  - wget $bag_filename -P "records/"
+    
   # Run test:
 script:
-  - $_python src/realsense/realsense2_camera/scripts/rs2_test.py --all
-
-
+  - python src/realsense/realsense2_camera/scripts/rs2_test.py --all
+  
+ 
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/

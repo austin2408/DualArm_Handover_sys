@@ -6,12 +6,12 @@ find_package(catkin REQUIRED COMPONENTS rosconsole sensor_msgs)
 if(NOT ANDROID)
   find_package(PythonLibs)
 
-  if(PYTHONLIBS_VERSION_STRING VERSION_LESS "3.8")
+  if(PYTHONLIBS_VERSION_STRING VERSION_LESS "3.6")
     # Debian Buster
-    # find_package(Boost REQUIRED python37)
+    find_package(Boost REQUIRED python37)
   else()
     # Ubuntu Focal
-    # find_package(Boost REQUIRED python)
+    find_package(Boost REQUIRED python)
   endif()
 else()
 find_package(Boost REQUIRED)
