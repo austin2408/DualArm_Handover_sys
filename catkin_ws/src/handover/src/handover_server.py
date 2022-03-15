@@ -30,7 +30,7 @@ class HandoverServer:
         self.f_y = 0
         self.f_z = 0
         self.dis = None
-        self.pred = Affordance_predict(self.arm, info.P[0], info.P[5], info.P[2], info.P[6])
+        self.net = Affordance_predict(self.arm, info.P[0], info.P[5], info.P[2], info.P[6])
         if arm == 'right_arm':
             self.color_sub = message_filters.Subscriber('/camera_right/color/image_raw/compressed', CompressedImage)
             self.depth_sub = message_filters.Subscriber('/camera_right/aligned_depth_to_color/image_raw', Image)
@@ -56,7 +56,7 @@ class HandoverServer:
         """
     def switch_loop(self, req):
         res = TriggerResponse()
-        self.pred.switch()
+        self.net.switch()
         res.success = True
 
         return res
@@ -93,7 +93,7 @@ class HandoverServer:
             time.sleep(1)
         # Detect
         elif msg.goal == 1:
-            self.target, _, self.dis = self.pred.predict(self.color, self.depth)
+            self.target, _, self.dis = self.net.predict(self.color, self.depth)
             if self.target == None:
                 self._sas.set_aborted()
             else:
